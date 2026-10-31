@@ -1,12 +1,16 @@
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM node:22-alpine AS build
 WORKDIR /app
-COPY pom.xml .
-RUN mvn -q -DskipTests dependency:go-offline
+COPY package*.json ./
+RUN npm ci
+COPY tsconfig.json ./
 COPY src ./src
-RUN mvn -q -DskipTests package
-FROM eclipse-temurin:21-jre
+RUN npm run build
+FROM node:22-alpine
+ENV NODE_ENV=production
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
-COPY --from=build /app/target/the-veil-*.jar app.jar
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+COPY migrations ./migrations
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+CMD ["node", "dist/server.js"]

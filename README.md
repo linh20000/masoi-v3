@@ -4,25 +4,49 @@ Responsive HOST/PLAYER app for private role dealing. The UI follows the Google S
 
 ## Run
 
-Requirements: Docker Compose v2. From the project root, copy the visible `env.example` to `.env` and set a unique `POSTGRES_PASSWORD` (and `HOST_ORIGIN` when opening the app from a phone or non-localhost browser origin):
+Requirements: Docker Compose v2, Node.js 22+, and npm. Docker runs MySQL only; run the backend and frontend directly on the machine. Copy `env.example` to `.env` and set unique MySQL passwords (and `HOST_ORIGIN` when opening the app from a phone or non-localhost browser origin):
 
 ```sh
 cp env.example .env
-docker compose up --build
+docker compose up -d mysql
 ```
 
-Open <http://localhost:5173>. Backend health: <http://localhost:8080/actuator/health>. PostgreSQL data is stored in the `postgres_data` volume. Redis is included for future session/pub-sub use; PostgreSQL remains authoritative.
+Start these in separate terminals from the project root:
+
+```sh
+cd backend && npm ci && npm run dev
+```
+
+```sh
+cd frontend && npm ci && npm run dev
+```
+
+Open <http://localhost:5173>. Backend health: <http://localhost:8080/actuator/health>. MySQL stores application data in the `mysql_data` volume. REST and authenticated WebSocket paths are unchanged.
+
+### Copy existing PostgreSQL data
+
+To copy data from an existing PostgreSQL database, keep that database running and reachable from the machine. Back it up first, start MySQL, then apply the MySQL schema and copy existing room data from a backend terminal:
+
+```sh
+docker compose up -d mysql
+cd backend
+npm ci
+npm run migrate
+LEGACY_PG_URL='postgresql://user:password@localhost:5432/theveil' npm run migrate:postgres-data
+```
+
+The copy is repeatable and leaves PostgreSQL untouched. `LEGACY_PG_URL` can point to a local or remote PostgreSQL database.
 
 The host secret and player secret are returned once when creating/joining a room. Keep them private. The browser keeps the active session in session storage. A room code alone does not grant access to dealt roles.
 
 ## Local development
 
-Run PostgreSQL and Redis with `docker compose up postgres redis -d`, then run the backend with `cd backend && mvn spring-boot:run` and frontend with `cd frontend && npm install && npm run dev`. Configure `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`, and `VITE_API_URL` as needed.
+The root `.env` file is loaded by the backend. Configure `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, and `HOST_ORIGIN` as needed. Vite proxies API and WebSocket requests to `http://127.0.0.1:8080` by default; set `VITE_BACKEND_URL` in `frontend/.env.local` to override it.
 
 ## Checks
 
 ```sh
-cd backend && mvn verify
+cd backend && npm run build
 cd frontend && npm ci && npm run build
 ```
 
