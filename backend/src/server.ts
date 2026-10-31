@@ -148,4 +148,4 @@ await app.register(async (fastify) => {
 });
 
 app.get('/actuator/health',async()=>{await pool.query('SELECT 1');return {status:'UP'};});
-const port=Number(process.env.PORT??8080);await app.listen({host:'0.0.0.0',port});
+const port=Number(process.env.PORT??8080);await app.listen({host:process.env.HOST??'127.0.0.1',port});

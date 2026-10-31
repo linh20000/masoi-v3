@@ -43,6 +43,36 @@ The host secret and player secret are returned once when creating/joining a room
 
 The root `.env` file is loaded by the backend. Configure `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, and `HOST_ORIGIN` as needed. Vite proxies API and WebSocket requests to `http://127.0.0.1:8080` by default; set `VITE_BACKEND_URL` in `frontend/.env.local` to override it.
 
+## VPS deployment
+
+On a VPS, do not use `npm run dev`. Build the backend once, then start the compiled server. `tsx` is a development dependency, which is why it is missing after a production-only install.
+
+1. Install Node.js 22+, Docker Compose, and Nginx. Clone the project, create the root `.env`, and set strong MySQL passwords, `MYSQL_HOST=127.0.0.1`, `MYSQL_PORT=3307`, `MYSQL_BIND_PORT=3307`, `HOST=127.0.0.1`, and `HOST_ORIGIN=https://your-domain.example`.
+2. Start the database: `docker compose up -d mysql`.
+3. Build and start the backend:
+
+```sh
+cd backend
+npm ci
+npm run build
+npm ci --omit=dev
+npm start
+```
+
+For a persistent service, use the VPS Node.js application manager with startup command `npm start`, or run it under a process manager such as PM2.
+
+4. Build the frontend:
+
+```sh
+cd frontend
+npm ci
+npm run build
+```
+
+5. Configure Nginx to serve `frontend/dist` and proxy `/api/` and `/ws/` to `127.0.0.1:8080`. A starter server block is in [deploy/nginx-vps.conf](deploy/nginx-vps.conf); replace the domain and document root, then configure HTTPS for the domain.
+
+The Vite proxy is only for local development. On the VPS, Nginx provides the same-origin proxy, so browser requests stay under your domain while REST and WebSocket traffic reaches the local backend. MySQL is published only on loopback port 3307.
+
 ## Checks
 
 ```sh

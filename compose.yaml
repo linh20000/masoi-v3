@@ -7,7 +7,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-theveil}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
-    ports: ["${MYSQL_BIND_PORT:-3307}:3306"]
+    ports: ["127.0.0.1:${MYSQL_BIND_PORT:-3307}:3306"]
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
