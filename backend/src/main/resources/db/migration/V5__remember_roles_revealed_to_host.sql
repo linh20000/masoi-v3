@@ -1,0 +1,2 @@
+ALTER TABLE players
+  ADD COLUMN host_knows_role BOOLEAN NOT NULL DEFAULT FALSE;
